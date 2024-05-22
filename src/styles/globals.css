@@ -161,6 +161,24 @@ body {
   overflow: hidden;
 
 }
+
+.col a {
+  color: #ffffff;
+  text-align: left;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-bottom: 2px solid transparent;
+  transition: border-bottom 0.3s;
+  float: left;
+  font-family: "Open Sans", sans-serif;
+  text-align: center;
+  font-size: 24px;
+  padding-top: 2%;
+  padding-left: 3%;
+  justify-content:left;
+  text-align: left;
+}
+
 .buttons {
   display: flex;
   align-items: center;

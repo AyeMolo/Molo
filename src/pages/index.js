@@ -273,6 +273,7 @@ function App() {
                   ❣
                 </a>
                 <a href="https://discord.com/users/398244063821955072">✉︎</a>
+                <a href="https://store.molo.monster">✧</a>
                 <p>{typedGreeting}</p>
               </div>
             </div>
@@ -306,9 +307,8 @@ function App() {
                 </div>
                 <div className="row noMargin">
                   <div className="col one">
-                    <h2>Coming Soon...</h2>
-                    <h2>----------------------------</h2>
-                    <h2>----------------------------</h2>
+                    <h2>Data Structures- Employee management</h2>
+                    <a href="https://github.com/AyeMolo/Data-Structure/tree/main/java">GitHub Link</a>
                   </div>
                   <div className="col two">
                     <h2>----------------------------</h2>
