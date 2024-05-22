@@ -3,15 +3,7 @@ import Image from "next/image";
 import { Inter } from "next/font/google";
 import styles from "@/styles/Home.module.css";
 
-import React, { useState, useEffect } from "react";
-
-// import In_This_Darkness from "./music/In This Darkness.mp3";
-// import Let_u_go from "./music/Let-U-Go.mp3";
-// import Tip_toe from "./music/Tip Toe.mp3";
-// import jp_song from "./music/二十歳の恋.mp3";
-// import    from "./music/click.mp3";
-
-// import hello from "./music/hi.gif";
+import React, { useState, useEffect, useRef } from "react";
 
 const playlist = [
   { name: "In This Darkness", src: "/music/In This Darkness.mp3" },
@@ -40,26 +32,11 @@ const quotes = [
 
 function App() {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
-
   const [audio, setAudio] = useState(null);
-
-  useEffect(() => {
-    setAudio(new Audio(playlist[currentSongIndex].src));
-  }, []);
-
-  const [isPlaying, setIsPlaying] = useState(false);
-
   const [clickAudio, setClickAudio] = useState(null);
-
-  useEffect(() => {
-    setClickAudio(new Audio("/music/click.mp3"));
-  }, []);
-
-  const [currentSongName, setCurrentSongName] = useState(
-    playlist[currentSongIndex].name
-  );
+  const [currentSongName, setCurrentSongName] = useState(playlist[currentSongIndex].name);
   const birthdate = new Date("2006-01-11T03:20:23");
-  const [age, setAge] = useState(""); // Initialize age as an empty string
+  const [age, setAge] = useState("");
   const [greeting, setGreeting] = useState("");
   const [typedGreeting, setTypedGreeting] = useState("");
   const [showBox1, setShowBox1] = useState(true);
@@ -67,15 +44,37 @@ function App() {
   const [showBox3, setShowBox3] = useState(false);
   const [typedQuote] = useState(getRandomQuote());
   const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [queue, setQueue] = useState([...playlist]);
+  const [stack, setStack] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSong, setCurrentSong] = useState(null);
+  const audioRef = useRef(null);
+  
+  useEffect(() => {
+    setAudio(new Audio(playlist[currentSongIndex].src));
+    setClickAudio(new Audio("/music/click.mp3"));
+    audioRef.current = new Audio();
+  }, []);
 
-  // Calculate age based on the birthdate
-  function calculateAge() {
-    const diff = new Date() - birthdate;
-    const ageDate = new Date(diff);
-    return `${
-      ageDate.getFullYear() - 1970
-    } years, ${ageDate.getMonth()} months, ${ageDate.getDate()} days, ${ageDate.getHours()} hours, ${ageDate.getMinutes()} minutes, and ${ageDate.getSeconds()} seconds`;
-  }
+  useEffect(() => {
+    if (currentSong) {
+      audioRef.current.src = currentSong.src;
+      if (isPlaying) {
+        audioRef.current.play();
+      }
+    }
+  }, [currentSong, isPlaying]);
+
+  useEffect(() => {
+    const handleEnded = () => {
+      playNext();
+    };
+    audioRef.current.addEventListener("ended", handleEnded);
+
+    return () => {
+      audioRef.current.removeEventListener("ended", handleEnded);
+    };
+  }, [queue, stack]);
 
   useEffect(() => {
     const getGreeting = () => {
@@ -141,154 +140,190 @@ function App() {
     document.body.style.backgroundImage = backgrounds[randomIndex];
   };
 
-  const playPrevious = () => {
-    clickAudio.play();
-    const newIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
-    setCurrentSongIndex(newIndex);
-    setCurrentSongName(playlist[newIndex].name);
-    audio.src = playlist[newIndex].src;
-    audio.play();
+  const playSong = (song) => {
+    setStack((prevStack) => [currentSong, ...prevStack]);
+    setCurrentSong(song);
+    setCurrentSongName(song.name);
     setIsPlaying(true);
   };
 
+  const playPrevious = () => {
+    if (stack.length > 0) {
+      setQueue((prevQueue) => [currentSong, ...prevQueue]);
+      const prevSong = stack[0];
+      setStack((prevStack) => prevStack.slice(1));
+      setCurrentSong(prevSong);
+      setCurrentSongName(prevSong.name); // Update current song name
+      setIsPlaying(true);
+    }
+  };
+  
+
   const togglePlay = () => {
-    clickAudio.play();
     if (isPlaying) {
-      audio.pause();
+      audioRef.current.pause();
     } else {
-      audio.play();
+      audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
   };
 
   const playNext = () => {
-    clickAudio.play();
-    const newIndex = (currentSongIndex + 1) % playlist.length;
-    setCurrentSongIndex(newIndex);
-    setCurrentSongName(playlist[newIndex].name);
-    audio.src = playlist[newIndex].src;
-    audio.play();
-    setIsPlaying(true);
-  };
-
-  function getRandomQuote() {
-    return quotes[Math.floor(Math.random() * quotes.length)];
-  }
-
-  return (
-    <>
-      {/* Display disclaimer */}
-      {showDisclaimer && (
-        <div className="disclaimer" onClick={handleClickAnywhere}>
-          <h1>Welcome!</h1>
-          <h1>This website is still under development. Expect bugs!</h1>
-          <p>Click anywhere to enter.</p>
-        </div>
-      )}
-      {/* Main content */}
-      {!showDisclaimer && (
-        <div>
-          <div className="a1">
-            <header className="head">
-              <h1 className="a1logo">影の君主</h1>
-              <h2 className="logo">Molo</h2>
-            </header>
+    if (queue.length > 0)
+      {
+        const nextSong = queue[0];
+        setQueue((prevQueue) => prevQueue.slice(1));
+        
+        playSong(nextSong);
+      }
+    };
+  
+    const handleSelectChange = (event) => {
+      const selectedSong = playlist.find(
+        (song) => song.name === event.target.value
+      );
+      playSong(selectedSong);
+      setCurrentSongName(selectedSong.name);
+    };
+  
+    function calculateAge() {
+      const diff = new Date() - birthdate;
+      const ageDate = new Date(diff);
+      return `${
+        ageDate.getFullYear() - 1970
+      } years, ${ageDate.getMonth()} months, ${ageDate.getDate()} days, ${ageDate.getHours()} hours, ${ageDate.getMinutes()} minutes, and ${ageDate.getSeconds()} seconds`;
+    }
+  
+    function getRandomQuote() {
+      return quotes[Math.floor(Math.random() * quotes.length)];
+    }
+  
+    return (
+      <>
+        {/* Display disclaimer */}
+        {showDisclaimer && (
+          <div className="disclaimer" onClick={handleClickAnywhere}>
+            <h1>Welcome!</h1>
+            <h1>This website is still under development. Expect bugs!</h1>
+            <p>Click anywhere to enter.</p>
           </div>
-          <div className="ControlBox">
-            <div className="buttons">
-              <p>{isPlaying ? `Now Playing: ${currentSongName}` : "(^///^)"}</p>
-              <span className="control-Text" onClick={playPrevious}>
-                ⏮
-              </span>
-              <span className="control-Text" onClick={togglePlay}>
-                {isPlaying ? "⏸" : "⏵"}
-              </span>
-              <span className="control-Text" onClick={playNext}>
-                ⏭
-              </span>
+        )}
+        {/* Main content */}
+        {!showDisclaimer && (
+          <div>
+            <div className="a1">
+              <header className="head">
+                <h1 className="a1logo">影の君主</h1>
+                <h2 className="logo">Molo</h2>
+              </header>
             </div>
-            <div className="navigation">
-              <a
-                href="#info"
-                onClick={() => {
-                  setShowBox1(true);
-                  setShowBox2(false);
-                  setShowBox3(false);
-                }}
-              >
-                ℹ️
-              </a>
-              <a
-                href="#about"
-                onClick={() => {
-                  setShowBox1(false);
-                  setShowBox2(true);
-                  setShowBox3(false);
-                }}
-              >
-                🗝
-              </a>
-              <a
-                href="#projects"
-                onClick={() => {
-                  setShowBox1(false);
-                  setShowBox2(false);
-                  setShowBox3(true);
-                }}
-              >
-                ❣
-              </a>
-              <a href="https://discord.com/users/398244063821955072">✉︎</a>
-              <p>{typedGreeting}</p>
+            <div className="ControlBox">
+              <div className="buttons">
+                <select value={currentSongName} onChange={handleSelectChange}>
+                  {playlist.map((song, index) => (
+                    <option key={index} value={song.name}>
+                      {song.name}
+                    </option>
+                  ))}
+                </select>
+                <p>{isPlaying ? `Now Playing: ${currentSongName}` : "(^///^)"}</p>
+                <button className="control-Text" onClick={playPrevious}>
+                  Previous
+                </button>
+                <button className="control-Text" onClick={togglePlay}>
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button className="control-Text" onClick={playNext}>
+                  Next
+                </button>
+                
+              </div>
+  
+              {/* Dropdown for my songs */}
+  
+              <div className="navigation">
+                <a
+                  href="#info"
+                  onClick={() => {
+                    setShowBox1(true);
+                    setShowBox2(false);
+                    setShowBox3(false);
+                  }}
+                >
+                  ℹ️
+                </a>
+                <a
+                  href="#about"
+                  onClick={() => {
+                    setShowBox1(false);
+                    setShowBox2(true);
+                    setShowBox3(false);
+                  }}
+                >
+                  🗝
+                </a>
+                <a
+                  href="#projects"
+                  onClick={() => {
+                    setShowBox1(false);
+                    setShowBox2(false);
+                    setShowBox3(true);
+                  }}
+                >
+                  ❣
+                </a>
+                <a href="https://discord.com/users/398244063821955072">✉︎</a>
+                <p>{typedGreeting}</p>
+              </div>
             </div>
-          </div>
-
-          {showBox1 && (
-            <div className="boxes1">
-              <p>I am {age} old</p>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <img
-                  src={helloGif.src}
-                  alt={helloGif.name}
-                  style={{ width: "200px", height: "auto" }}
-                />
-              </div>
-              <p>→ {typedQuote}</p>
-            </div>
-          )}
-
-          {showBox2 && <div className="boxes2"></div>}
-          {showBox3 && (
-            <div className="boxes3">
-              <div className="projects">
-                <h1>Projects</h1>
-              </div>
-              <div className="row noMargin">
-                <div className="col one">
-                  <h2>Coming Soon...</h2>
-                  <h2>----------------------------</h2>
-                  <h2>----------------------------</h2>
+  
+            {showBox1 && (
+              <div className="boxes1">
+                <p>I am {age} old</p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <img
+                    src={helloGif.src}
+                    alt={helloGif.name}
+                    style={{ width: "200px", height: "auto" }}
+                  />
                 </div>
-                <div className="col two">
-                  <h2>----------------------------</h2>
-                  <h2>----------------------------</h2>
-                  <h2>----------------------------</h2>
-                </div>
+                <p>→ {typedQuote}</p>
               </div>
-              <div className="row noMargin">
-                <div className="col three">
-                  <h2>----------------------------</h2>
-                  <h2>----------------------------</h2>
-                  <h2>----------------------------</h2>
+            )}
+  
+            {showBox2 && <div className="boxes2"></div>}
+            {showBox3 && (
+              <div className="boxes3">
+                <div className="projects">
+                  <h1>Projects</h1>
                 </div>
-                <div className="col four">
+                <div className="row noMargin">
+                  <div className="col one">
+                    <h2>Coming Soon...</h2>
+                    <h2>----------------------------</h2>
+                    <h2>----------------------------</h2>
+                  </div>
+                  <div className="col two">
+                    <h2>----------------------------</h2>
+                    <h2>----------------------------</h2>
+                    <h2>----------------------------</h2>
+                  </div>
+                </div>
+                <div className="row noMargin">
+                  <div className="col three">
+                    <h2>----------------------------</h2>
+                    <h2>----------------------------</h2>
+                    <h2>----------------------------</h2>
+                  </div>
+                  <div className="col four">
+                   
                   <h2>----------------------------</h2>
                   <h2>----------------------------</h2>
                   <h2>----------------------------</h2>
@@ -303,3 +338,4 @@ function App() {
 }
 
 export default App;
+  

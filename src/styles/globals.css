@@ -145,6 +145,7 @@ body {
   margin: 0px;
 }
 
+
 .col {
   position: relative;
   margin: 30px auto;
@@ -159,6 +160,49 @@ body {
   box-shadow: 0 0 10px #ffffff;
   overflow: hidden;
 
+}
+.buttons {
+  display: flex;
+  align-items: center;
+}
+
+.buttons select,
+.buttons button {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 8px 16px;
+  margin-right: 10px;
+  border: none;
+  background-color: #f0f0f0;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border-radius: 20px; /* Rounded edges */
+
+}
+
+.buttons select {
+  appearance: none;
+}
+
+.buttons select:hover,
+.buttons button:hover {
+  background-color: #ddd;
+}
+
+.buttons button:focus {
+  outline: none;
+}
+
+.control-Text {
+  background-color: #007bff;
+  color: white;
+  border-radius: 20px; /* Rounded edges */
+
+}
+
+.control-Text:hover {
+  background-color: #0056b3;
 }
 
 .col h2{
